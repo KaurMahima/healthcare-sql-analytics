@@ -1,0 +1,14 @@
+name: healthcare-analytics
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pandas>=2.0
+  - pyarrow>=14.0
+  - duckdb>=0.10
+  - kaggle>=1.6
+  - python-dateutil>=2.9
+  - pip
+  - pip:
+      - fastapi>=0.110
+      - uvicorn>=0.29
