@@ -10,12 +10,12 @@ def main():
     api = KaggleApi()
     api.authenticate()
 
-    print(f"Downloading metadata...")
+    print("Downloading metadata...")
     api.dataset_metadata(
         DATASET,
         path=RAW_DIR)
 
-    print(f"Downloading dataset from kaggle...")
+    print("Downloading dataset from kaggle...")
     api.dataset_download_files(
         DATASET,
         path=RAW_DIR,
