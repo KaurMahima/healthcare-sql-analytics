@@ -6,6 +6,17 @@ DATASET = "prasad22/healthcare-dataset"
 RAW_DIR = Path("data/raw")
 
 
+def print_api_error(operation, dataset, error):
+    """Print a detailed error message for API failures."""
+    print(f"Error: Failed to {operation} for '{dataset}'.", file=sys.stderr)
+    print(f"Details: {type(error).__name__}: {error}", file=sys.stderr)
+    print("Please verify:", file=sys.stderr)
+    print("  - The dataset name is correct", file=sys.stderr)
+    print("  - You have internet connectivity", file=sys.stderr)
+    print("  - You have permission to access this dataset", file=sys.stderr)
+    print("  - Your Kaggle API credentials are properly configured", file=sys.stderr)
+
+
 def main():
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     api = KaggleApi()
@@ -17,13 +28,7 @@ def main():
             DATASET,
             path=RAW_DIR)
     except Exception as e:
-        print(f"Error: Failed to download dataset metadata for '{DATASET}'.", file=sys.stderr)
-        print(f"Details: {type(e).__name__}: {e}", file=sys.stderr)
-        print("Please verify:", file=sys.stderr)
-        print("  - The dataset name is correct", file=sys.stderr)
-        print("  - You have internet connectivity", file=sys.stderr)
-        print("  - You have permission to access this dataset", file=sys.stderr)
-        print("  - Your Kaggle API credentials are properly configured", file=sys.stderr)
+        print_api_error("download dataset metadata", DATASET, e)
         sys.exit(1)
 
     print("Downloading dataset from kaggle...")
@@ -34,13 +39,7 @@ def main():
             unzip=True
         )
     except Exception as e:
-        print(f"Error: Failed to download dataset files for '{DATASET}'.", file=sys.stderr)
-        print(f"Details: {type(e).__name__}: {e}", file=sys.stderr)
-        print("Please verify:", file=sys.stderr)
-        print("  - The dataset name is correct", file=sys.stderr)
-        print("  - You have internet connectivity", file=sys.stderr)
-        print("  - You have permission to access this dataset", file=sys.stderr)
-        print("  - You have sufficient disk space", file=sys.stderr)
+        print_api_error("download dataset files", DATASET, e)
         sys.exit(1)
 
     files = list(RAW_DIR.glob("*"))
