@@ -93,6 +93,69 @@ ALTER TABLE healthcare_data_dedup RENAME TO healthcare_data;
 
 COMMIT;
 
+-- Drop rows where the billing amount is negative 
+DELETE FROM healthcare_data 
+WHERE billing_amount < 0
+
+-- Health data sometimes have same records but the identifiers like gender and age might be different 
+WITH grp AS (
+        SELECT 
+        name, gender, blood_type, medical_condition, date_of_admission,
+        doctor, hospital, insurance_provider, billing_amount, room_number,
+        admission_type, discharge_date, medication, test_results,
+        COUNT(DISTINCT age ) AS age_variations,
+        MIN(age) AS min_age,
+        MAX(age) AS max_age,
+        COUNT(*) AS n_rows 
+    FROM healthcare_data  
+    GROUP BY ALL 
+)
+SELECT * 
+FROm grp 
+WHERE age_variations > 1
+ORDER BY age_variations DESC, n_rows;
+
+-- check for gender as well 
+WITH grp AS (
+        SELECT 
+        name, age, blood_type, medical_condition, date_of_admission,
+        doctor, hospital, insurance_provider, billing_amount, room_number,
+        admission_type, discharge_date, medication, test_results,
+        COUNT(DISTINCT gender) AS gender_variations,
+        COUNT(*) AS n_rows 
+    FROM healthcare_data  
+    GROUP BY ALL 
+)
+SELECT * 
+FROm grp 
+WHERE gender_variations > 1
+ORDER BY gender_variations DESC, n_rows;
+
+-- AGE INCONSISTENCY CORRECTION
+-- =====================================================================
+-- ISSUE IDENTIFIED: 
+-- - Same patient records (identical name, admission date, hospital, etc.) 
+--   have different age values
+-- - ~4,956 rows affected with age variations
+--
+-- DETECTION METHOD:
+-- - Grouped records by all fields EXCEPT age
+-- - Counted DISTINCT age values per group
+-- - Found groups where COUNT(DISTINCT age) > 1
+-- - This indicates the same record appears with multiple different ages
+--
+-- ROOT CAUSE:
+-- - Likely data entry errors or system inconsistencies
+-- - Same visit/record entered multiple times with different ages
+--
+-- SOLUTION IMPLEMENTED:
+-- - Calculate baseline age from patient's first admission date
+-- - For all visits: age = baseline_age + years_elapsed since first visit
+-- - This standardizes ages chronologically across all patient visits
+-- - Apply DISTINCT to remove exact duplicates created by standardization
+
+
+
 
 
 
