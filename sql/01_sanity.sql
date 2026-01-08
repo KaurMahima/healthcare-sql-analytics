@@ -7,12 +7,26 @@ DESCRIBE healthcare_data;
 -- Preview data 
 SELECT * FROM healthcare_data LIMIT 10;
 
--- Quick min/max of dates 
+-- Quick min/max of dates, age and billing amount 
 SELECT MIN("Date of Admission") AS min_admission,
        MAX("Date of Admission") AS max_admission, 
        MIN("Discharge Date") AS min_discharge, 
-       MAX("Discharge Date") AS max_discharge
+       MAX("Discharge Date") AS max_discharge,
+       MIN("Age") AS min_age,
+       MAX("Age") AS max_age,
+       MIN("Billing Amount") AS min_billing_amount,
+       MAX("Billing Amount") AS max_billing_amount
 FROM healthcare_data;
+
+-- Check of negative billing 
+SELECT count(*) AS n 
+FROM healthcare_data 
+WHERE "Billing Amount" < 0
+
+-- Check for invalid dates where discharge date is greater than the admission date 
+SELECT count(*) as invalid_dates
+FROM healthcare_data
+WHERE "Discharge Date" < "Date of Admission";
 
 -- Distinct value counts for key categorical variables 
 -- Gender 
