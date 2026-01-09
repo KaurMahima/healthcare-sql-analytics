@@ -246,12 +246,24 @@ SELECT
         MAX(visit_id) AS max_visits_by_one_patient
 FROM healthcare_data;
 
--- Preview results 
+-- Create age_group column for downstream analysis
+ALTER TABLE healthcare_data ADD COLUMN IF NOT EXISTS age_group VARCHAR;
 
-SELECT patient_id, visit_id, name, blood_type, date_of_admission
+UPDATE healthcare_data
+SET age_group = CASE 
+        WHEN age < 18 THEN '0-17'
+        WHEN age < 30 THEN '18-29'
+        WHEN age < 45 THEN '30-44'
+        WHEN age < 60 THEN '45-59'
+        WHEN age < 75 THEN '60-74'
+        ELSE '75+' 
+    END;
+
+-- Preview results 
+SELECT patient_id, visit_id, name, blood_type, date_of_admission, age_group
 FROM healthcare_data
 WHERE patient_id <= 5
-ORDER BY patient_id, visit_id;
+ORDER BY patient_id, visit_id, age_group;
 
 
 
