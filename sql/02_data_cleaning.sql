@@ -95,7 +95,7 @@ COMMIT;
 
 -- Drop rows where the billing amount is negative 
 DELETE FROM healthcare_data 
-WHERE billing_amount < 0
+WHERE billing_amount < 0;
 
 -- Health data sometimes have same records but the identifiers like gender and age might be different 
 WITH grp AS (
@@ -127,12 +127,11 @@ WITH grp AS (
     GROUP BY ALL 
 )
 SELECT * 
-FROm grp 
+FROM grp 
 WHERE gender_variations > 1
 ORDER BY gender_variations DESC, n_rows;
 
--- AGE INCONSISTENCY CORRECTION
--- =====================================================================
+-- AGE INCONSISTENCY CORRECTION 
 -- ISSUE IDENTIFIED: 
 -- - Same patient records (identical name, admission date, hospital, etc.) 
 --   have different age values
@@ -153,6 +152,107 @@ ORDER BY gender_variations DESC, n_rows;
 -- - For all visits: age = baseline_age + years_elapsed since first visit
 -- - This standardizes ages chronologically across all patient visits
 -- - Apply DISTINCT to remove exact duplicates created by standardization
+
+-- Fix age query 
+
+BEGIN TRANSACTION;
+
+CREATE TABLE healthcare_data_age_fixed AS 
+WITH ordered_visits AS (
+        SELECT 
+                *,
+                FIRST_VALUE(age) OVER(PARTITION BY name ORDER BY date_of_admission) AS baseline_age,
+                FIRST_VALUE(date_of_admission) OVER(PARTITION BY name ORDER BY date_of_admission) AS baseline_date,
+                DATEDIFF('year',
+                        FIRST_VALUE(date_of_admission) OVER(PARTITION BY name ORDER BY date_of_admission),
+                        date_of_admission) AS years_elapsed
+        FROM healthcare_data
+),
+age_corrected AS (
+        SELECT 
+                * EXCLUDE(baseline_age, baseline_date, years_elapsed, age),
+                baseline_age + years_elapsed AS age
+        FROM ordered_visits
+)
+SELECT DISTINCT * -- drop any duplciates after fixing age 
+FROM age_corrected;
+
+SELECT COUNT(*) AS rows_before FROM healthcare_data;
+SELECT COUNT(*) AS rows_after FROM healthcare_data_age_fixed;
+
+DROP TABLE healthcare_data;
+ALTER TABLE healthcare_data_age_fixed RENAME TO healthcare_data;
+
+COMMIT;
+
+-- Confirm there is no backwards age 
+WITH ordered_visits AS (
+        SELECT 
+                name, 
+                date_of_admission,
+                age,
+                LAG(age) OVER (PARTITION BY name ORDER BY date_of_admission) AS previous_age
+        FROM healthcare_data
+)
+SELECT COUNT(*) as backwards_age_count
+FROM ordered_visits
+WHERE previous_age IS NOT NULL AND age < previous_age;
+
+
+-- CREATE PATIENT IDs AND VISIT IDs
+
+-- RATIONALE:
+-- - No existing patient identifiers in the dataset
+-- - patient_id: Unique identifier for each patient
+-- - visit_id: Sequential visit number per patient (chronological)
+--
+-- LOGIC:
+-- - patient_id: Based on unique name + blood_type combination
+-- - visit_id: ROW_NUMBER per patient ordered by admission date
+
+-- Add columns 
+ALTER TABLE healthcare_data ADD COLUMN patient_id INTEGER;
+ALTER TABLE healthcare_data ADD COLUMN visit_id INTEGER;
+
+-- Create patient ids 
+WITH unique_patients AS (
+        SELECT DISTINCT name, blood_type,
+                DENSE_RANK() OVER (ORDER BY name, blood_type) as patient_id
+        FROM healthcare_data 
+)
+UPDATE healthcare_data h
+SET patient_id = up.patient_id 
+FROM unique_patients up 
+WHERE h.name = up.name AND h.blood_type = up.blood_type;
+
+-- Create visit_ids 
+WITH visit_numbers AS (
+        SELECT name, blood_type, date_of_admission,
+        ROW_NUMBER() OVER (PARTITION BY name, blood_type ORDER BY date_of_admission ASC) AS visit_num
+        FROM healthcare_data
+)
+UPDATE healthcare_data h 
+SET visit_id = vn.visit_num 
+FROM visit_numbers vn 
+WHERE h.name = vn.name
+  AND h.blood_type = vn.blood_type
+  AND h.date_of_admission = vn.date_of_admission;
+
+-- Validate the results 
+SELECT 
+        COUNT(DISTINCT patient_id) AS unique_patients,
+        COUNT(*) AS total_rows,
+        ROUND(COUNT(*) * 1.0/COUNT(DISTINCT patient_id),2) AS avg_visits_per_patient,
+        MAX(visit_id) AS max_visits_by_one_patient
+FROM healthcare_data;
+
+-- Preview results 
+
+SELECT patient_id, visit_id, name, blood_type, date_of_admission
+FROM healthcare_data
+WHERE patient_id <= 5
+ORDER BY patient_id, visit_id;
+
 
 
 
