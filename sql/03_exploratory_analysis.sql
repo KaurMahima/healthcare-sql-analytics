@@ -78,3 +78,45 @@ ORDER BY total_billing_amount DESC;
 --   • Claim denial analysis (min claims)
 --   • High-acuity case management ($50k+)
 --   • Payer-specific contract optimization (Medicare margin vs. Cigna margin)
+
+-- RESEARCH QUESTION 3: Top 3 medications prescribed 
+
+SELECT 
+     medication,
+     COUNT(*) AS prescription_count,
+FROM healthcare_data
+GROUP BY medication
+ORDER BY prescription_count DESC
+LIMIT 1;
+
+-- INSIGHTS:
+-- Lipitor is the most frequently prescribed medication 
+
+-- RESEARCH QUESTION 4: Admissions by type with share of total
+
+SELECT admission_type,
+       COUNT(*) as admissions, 
+       ROUND(100.0 * COUNT(*)/(SELECT COUNT(*) FROM healthcare_data),2) AS pct_of_total,
+       ROUND(AVG(billing_amount),2) AS avg_billing_cost,
+       ROUND(AVG(DATEDIFF('day', date_of_admission, discharge_date)),1) AS avg_length_of_stay_days
+FROM healthcare_data
+GROUP BY admission_type
+ORDER BY admissions DESC;
+
+-- INSIGHTS:
+-- BALANCED DISTRIBUTION: Near-perfect split across admission types—Elective (33.65%, 16,795), 
+--   Urgent (33.56%, 16,748), Emergency (32.78%, 16,361). This indicates balanced operational 
+--   capacity across scheduled and unscheduled care, minimizing volatility risk.
+-- LOS UNIFORMITY: Average length of stay is nearly identical (15.4-15.6 days) across all types,
+--   suggesting consistent case complexity regardless of admission pathway. This is unusual—typically
+--   Emergency admissions show +2-3 days longer LOS due to higher acuity and complications.
+-- RESOURCE IMPLICATIONS: Equal distribution = predictable staffing (no surge patterns), but also
+--   suggests potential inefficiency—Emergency/Urgent cases should ideally be shorter if ED fast-track
+--   and observation units are optimized. Current uniformity may indicate boarding delays or slow
+--   discharge processes affecting all pathways equally. Only ~$96 difference between highest (Elective) and lowest (Emergency).
+-- REVENUE STABILITY: 33% Elective mix provides good baseline revenue (schedulable, predictable). 
+--   However, 66% unscheduled (Emergency + Urgent) creates capacity pressure. Opportunity: Shift 10-15%
+--   of Urgent cases to Elective through better outpatient management and pre-admission scheduling.
+
+
+
