@@ -71,7 +71,7 @@ FROM (
     HAVING COUNT(*) > 1) d ;
 
 -- Another query to check the duplicate rows 
-WITh total AS (
+WITH total AS (
         SELECT count(*) as total_rows FROM healthcare_data
 ),
 distincts AS (
