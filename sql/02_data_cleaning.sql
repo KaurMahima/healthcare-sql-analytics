@@ -111,7 +111,7 @@ WITH grp AS (
     GROUP BY ALL 
 )
 SELECT * 
-FROm grp 
+FROM grp 
 WHERE age_variations > 1
 ORDER BY age_variations DESC, n_rows;
 
