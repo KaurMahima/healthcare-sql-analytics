@@ -5,12 +5,11 @@
 -- Let's first explore and answer questions related to patient behaviour and risk and gain some clinical insights 
 
 -- RESEARCH QUESTION 1: Demographic health patterns
--- How do conditions vary by age and gender?
-
--- RESEARCH QUESTION 1: Demographic health patterns
 -- How do conditions vary by age and gender and find the top condition required treatment for each age group?
 
 WITH condition_stats AS (
+        SELECT 
+                age_group,
         SELECT 
                 age_group,
                 gender,
