@@ -174,7 +174,7 @@ age_corrected AS (
                 baseline_age + years_elapsed AS age
         FROM ordered_visits
 )
-SELECT DISTINCT * -- drop any duplciates after fixing age 
+SELECT DISTINCT * -- drop any duplicates after fixing age 
 FROM age_corrected;
 
 SELECT COUNT(*) AS rows_before FROM healthcare_data;
