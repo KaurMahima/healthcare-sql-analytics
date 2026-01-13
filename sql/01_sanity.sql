@@ -21,7 +21,7 @@ FROM healthcare_data;
 -- Check of negative billing 
 SELECT count(*) AS n 
 FROM healthcare_data 
-WHERE "Billing Amount" < 0
+WHERE "Billing Amount" < 0;
 
 -- Check for invalid dates where discharge date is greater than the admission date 
 SELECT count(*) as invalid_dates
