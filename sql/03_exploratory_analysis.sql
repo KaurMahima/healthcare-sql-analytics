@@ -79,11 +79,11 @@ ORDER BY total_billing_amount DESC;
 --   • High-acuity case management ($50k+)
 --   • Payer-specific contract optimization (Medicare margin vs. Cigna margin)
 
--- RESEARCH QUESTION 3: Top 3 medications prescribed 
+-- RESEARCH QUESTION 3: Top medication prescribed 
 
 SELECT 
      medication,
-     COUNT(*) AS prescription_count,
+     COUNT(*) AS prescription_count
 FROM healthcare_data
 GROUP BY medication
 ORDER BY prescription_count DESC
@@ -119,4 +119,77 @@ ORDER BY admissions DESC;
 --   of Urgent cases to Elective through better outpatient management and pre-admission scheduling.
 
 
+-- RESEARCH QUESTION 5: Monthly trend of admissions and billing
+SELECT 
+        strftime('%Y-%m', date_of_admission) AS month,
+        COUNT(*) as admissions,
+        ROUND(SUM(billing_amount),2) AS total_billing_per_month,
+        ROUND(AVG(billing_amount),2) AS avg_billing_per_month
+FROM healthcare_data
+GROUP BY month
+ORDER BY month;
 
+-- INSIGHTS:
+-- DATA SPAN: 5-year period from May 2019 to May 2024 (61 months). Final month (2024-05) shows only 
+--   190 admissions vs. ~800-900 monthly avg—indicates incomplete data collection (19 days captured).
+-- VOLUME STABILITY: Monthly admissions range 789-911 (excluding partial month), showing remarkable 
+--   consistency with ~850 avg/month. No major seasonal spikes or drops detected—suggests stable demand,
+--   effective capacity management, or data smoothing/synthetic generation.
+-- REVENUE CONSISTENCY: Monthly billing fluctuates between $20-23M with tight clustering. Total 5-year 
+--   revenue ~$1.28B. Avg cost per admission stable at $24.9-26.8k across all months—reinforces prior 
+--   finding of standardized pricing regardless of volume or external factors.
+-- MISSING SEASONALITY: Healthcare typically shows Q4 spikes (year-end insurance deductible rush) and 
+--   Q1 drops (new deductibles reset). This dataset shows ZERO seasonal pattern—unusual for real-world 
+--   healthcare operations. Possible explanations: (a) dataset is synthetic/simulated, (b) post-processed 
+--   to remove trends, (c) covers only chronic care (less seasonal than acute).
+
+
+-- RESEARCH QUESTION 6: Comorbid condition frequency analysis
+-- how many distinct conditions per patient (1..6)
+
+WITH patient_condition_counts AS (
+        SELECT patient_id, count(DISTINCT medical_condition) AS condition_count
+        FROM healthcare_data
+        GROUP BY patient_id
+)
+SELECT 
+        condition_count,
+        COUNT(*) AS patients,
+        ROUND(100.0 * COUNT(*)/ (SELECT COUNT(DISTINCT patient_id) FROM healthcare_data),2) AS pct_of_patients
+FROM patient_condition_counts
+GROUP BY condition_count
+ORDER BY condition_count;
+
+-- INSIGHTS:
+-- • 1 condition: 46,361 patients (96.84%)
+-- • 2 conditions: 1,382 (2.89%)
+-- • 3 conditions: 121 (0.25%)
+-- • 4 conditions: 9 (0.02%)
+-- • 5 conditions: 2 (0.00%)
+-- • 6 conditions: 0 (0.00%)
+-- Takeaway: Comorbidity is rare; dataset skews to single-condition patients.
+
+-- RESEARCH QUESTION 7: 30-day readmission analysis
+-- Count patients who returned to hospital within 30 days of a previous admission
+
+WITH patient_admissions AS (
+    SELECT 
+        patient_id, 
+        name,
+        date_of_admission,
+        ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY date_of_admission) as admission_number,
+        DATEDIFF('day', LAG(date_of_admission) OVER (PARTITION BY patient_id ORDER BY date_of_admission), date_of_admission) AS days_since_last_admission
+    FROM healthcare_data  
+)
+SELECT 
+    COUNT(DISTINCT patient_id) as patients_with_30day_readmission,
+    COUNT(*) as total_30day_readmissions,
+    ROUND(100.0 * COUNT(DISTINCT patient_id) / (SELECT COUNT(DISTINCT patient_id) FROM healthcare_data), 2) as readmission_rate_pct
+FROM patient_admissions
+WHERE days_since_last_admission <= 30 AND days_since_last_admission IS NOT NULL;
+
+-- INSIGHTS:
+-- 501 patients (1.05% of 47,875 total) experienced 30-day readmissions
+-- 609 total readmission events within 30 days (some patients readmitted multiple times)
+-- 108 readmissions beyond first = 501 patients had avg 1.22 readmissions each in 30-day window
+-- Out of 49,904 total admissions, only 609 (1.22%) were 30-day readmits
