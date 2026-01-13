@@ -80,7 +80,7 @@ distincts AS (
 SELECT total_rows, distinct_rows, total_rows - distinct_rows as  duplicate_rows 
 FROM total, distincts; 
 
--- Drop duplciate rows 
+-- Drop duplicate rows 
 
 BEGIN TRANSACTION;
 
