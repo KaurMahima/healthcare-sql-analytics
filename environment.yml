@@ -6,6 +6,7 @@ dependencies:
   - pandas>=2.0
   - pyarrow>=14.0
   - duckdb>=0.10
+  - duckdb-cli
   - kaggle>=1.6
   - python-dateutil>=2.9
   - pip
