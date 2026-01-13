@@ -18,7 +18,7 @@ SELECT MIN("Date of Admission") AS min_admission,
        MAX("Billing Amount") AS max_billing_amount
 FROM healthcare_data;
 
--- Check of negative billing 
+-- Check for negative billing 
 SELECT count(*) AS n 
 FROM healthcare_data 
 WHERE "Billing Amount" < 0;
