@@ -2,7 +2,7 @@
 -- 03_EXPLORATORY_ANALYSIS.SQL
 -- =====================================================================
 
--- Let's first explore and answer questions related to patient behaviour and risk and gain some clinical insights 
+-- Let's first explore and answer questions related to patient behavior and risk and gain some clinical insights 
 
 -- RESEARCH QUESTION 1: Demographic health patterns
 -- How do conditions vary by age and gender and find the top condition required treatment for each age group?
