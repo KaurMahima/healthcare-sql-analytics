@@ -53,7 +53,7 @@ SET name = TRIM(name),
 
 -- Update the name column to Proper case (just the first given name in caps)
 UPDATE healthcare_data 
-SET name = UPPER(LEFT(name, 1)) || LOWER(SUBSTRING("Name", 2));
+SET name = UPPER(LEFT(name, 1)) || LOWER(SUBSTRING(name, 2));
 
 -- Validate the proper name casing cleaning query 
 SELECT name
