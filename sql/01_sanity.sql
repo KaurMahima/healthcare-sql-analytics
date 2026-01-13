@@ -47,7 +47,7 @@ FROM healthcare_data
 GROUP BY 1
 ORDER BY n DESC;
 
---Test results 
+-- Test results 
 SELECT "Test Results", COUNT(*) AS n
 FROM healthcare_data
 GROUP BY 1
