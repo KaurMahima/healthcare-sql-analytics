@@ -23,7 +23,7 @@ SELECT count(*) AS n
 FROM healthcare_data 
 WHERE "Billing Amount" < 0;
 
--- Check for invalid dates where discharge date is greater than the admission date 
+-- Check for invalid dates where discharge date is before the admission date 
 SELECT count(*) as invalid_dates
 FROM healthcare_data
 WHERE "Discharge Date" < "Date of Admission";
